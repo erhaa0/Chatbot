@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 const KuromiHead: React.FC<{ isTalking: boolean }> = ({ isTalking }) => {
   return (
@@ -58,6 +58,28 @@ const KuromiHead: React.FC<{ isTalking: boolean }> = ({ isTalking }) => {
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-12 bg-pink-500 rounded-full flex items-center justify-center">
         <div className="w-4 h-4 bg-pink-300 rounded-full shadow-sm" />
       </div>
+
+      {/* Floating Sparkles when talking */}
+      <AnimatePresence>
+        {isTalking && (
+          <>
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 bg-pink-400 rounded-full"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ 
+                  opacity: [0, 1, 0], 
+                  scale: [0, 1.5, 0],
+                  x: (Math.random() - 0.5) * 150,
+                  y: (Math.random() - 0.5) * 150
+                }}
+                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

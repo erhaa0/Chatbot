@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Send, Sparkles, User, Bot, Trash2 } from "lucide-react";
-import { getKuromiResponse } from "../lib/gemini";
-import KuromiCharacter from "./KuromiCharacter";
+import { Send, Sparkles, User, Bot, Trash2, Settings, Key, X, Check } from "lucide-react";
+import { getChatResponse } from "../lib/gemini";
 
 interface Message {
   role: "user" | "model";
@@ -13,6 +12,9 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("KUROMI_API_KEY") || "");
+  const [tempKey, setTempKey] = useState(apiKey);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ const ChatInterface: React.FC = () => {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = 1.8; // High pitch for Kuromi
+      utterance.pitch = 1.0; 
       utterance.rate = 1.1;
       utterance.volume = 1;
       
@@ -47,14 +49,16 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
+      console.log("Requesting response for:", userMessage);
       const history = messages.slice(-5); // Keep context lean
-      const response = await getKuromiResponse(userMessage, history);
-      const textResponse = response || "Something went wrong, 💀!";
+      const response = await getChatResponse(userMessage, history, apiKey);
+      console.log("Received response:", response);
+      const textResponse = response || "Something went wrong. Please try again.";
       setMessages(prev => [...prev, { role: "model", parts: textResponse }]);
       speak(textResponse);
     } catch (error) {
       console.error(error);
-      const errorMsg = "Uff, my magic is acting up! Check the API key, dummy! 😈";
+      const errorMsg = "Unable to process request. Please verify your API key in settings.";
       setMessages(prev => [...prev, { role: "model", parts: errorMsg }]);
       speak(errorMsg);
     } finally {
@@ -62,36 +66,82 @@ const ChatInterface: React.FC = () => {
     }
   };
 
+  const saveKey = () => {
+    localStorage.setItem("KUROMI_API_KEY", tempKey);
+    setApiKey(tempKey);
+    setShowSettings(false);
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-5xl mx-auto relative z-10 font-sans text-white overflow-hidden">
-      {/* Top Navigation / Status - Immersive UI style */}
+      {/* Top Navigation */}
       <header className="flex justify-between items-center px-8 py-6 bg-gradient-to-b from-black/50 to-transparent">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse shadow-[0_0_10px_#ec4899]"></div>
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-pink-500/80">Kuromi OS v1.0</span>
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-pink-500/80">Neon Chat AI</span>
         </div>
-        <div className="hidden sm:flex items-center gap-6 text-[10px] uppercase tracking-[0.15em] text-zinc-500 font-bold">
-          <span className="hover:text-white transition-colors cursor-pointer">Archive</span>
-          <span className="hover:text-white transition-colors cursor-pointer">Mood: Snarky</span>
-          <span className="px-3 py-1 border border-pink-500/20 rounded-full text-pink-400">Gemini: Active</span>
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="hidden sm:flex items-center gap-6 text-[10px] uppercase tracking-[0.15em] text-zinc-500 font-bold">
+            <span className="px-3 py-1 border border-pink-500/20 rounded-full text-pink-400">
+              {apiKey ? "Key Set" : "No Key"}
+            </span>
+          </div>
+          <button 
+            onClick={() => setShowSettings(!showSettings)}
+            className={`p-2 rounded-full transition-all ${showSettings ? "bg-pink-500 text-white" : "hover:bg-white/5 text-zinc-400 hover:text-white"}`}
+          >
+            <Settings size={18} />
+          </button>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        {/* Character Section */}
-        <div className="flex flex-col items-center justify-center pt-4 pb-6 shrink-0">
-          <KuromiCharacter isTalking={isLoading} />
-          <motion.h1 
-            className="text-3xl font-bold mt-2 tracking-tighter text-pink-500 italic drop-shadow-lg"
-            initial={{ opacity: 0, y: 10 }}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 right-8 left-8 sm:left-auto sm:w-96 z-50 p-6 rounded-3xl bg-[#121214] border border-white/10 shadow-2xl backdrop-blur-3xl"
           >
-            Kuromi
-          </motion.h1>
-          <div className="px-3 py-0.5 bg-pink-500/10 border border-pink-500/20 rounded-full mt-1">
-            <span className="text-[10px] uppercase tracking-widest text-pink-400 font-bold">Mischievous AI</span>
-          </div>
-        </div>
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-pink-500 flex items-center gap-2">
+                  <Key size={14} /> Core Neural Key
+                </h3>
+                <p className="text-[10px] text-zinc-500 mt-1 uppercase leading-relaxed tracking-wider">
+                  Enter your Gemini API Key. It stays on your device.
+                </p>
+              </div>
+              <button onClick={() => setShowSettings(false)} className="text-zinc-600 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="relative">
+                <input 
+                  type="password"
+                  value={tempKey}
+                  onChange={(e) => setTempKey(e.target.value)}
+                  placeholder="Paste AIzaS... key here"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-zinc-300 outline-none focus:border-pink-500/50 transition-all font-mono"
+                />
+              </div>
+              <button 
+                onClick={saveKey}
+                className="w-full py-3 bg-pink-500 hover:bg-pink-400 transition-colors rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg shadow-pink-500/20"
+              >
+                Save Engine Key
+              </button>
+              <div className="text-[9px] text-zinc-600 italic text-center">
+                Need a key? Get one at aistudio.google.com
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0 pt-4">
 
         {/* Chat History */}
         <div 
@@ -99,15 +149,6 @@ const ChatInterface: React.FC = () => {
           className="flex-1 overflow-y-auto mx-4 sm:mx-8 mb-6 space-y-6 p-6 rounded-3xl bg-[#0c0c0e]/60 backdrop-blur-xl border border-white/5 shadow-2xl custom-scrollbar"
         >
           <AnimatePresence initial={false}>
-            {messages.length === 0 && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="h-full flex items-center justify-center text-zinc-600 text-sm italic tracking-wide"
-              >
-                Don't keep me waiting... whisper something! 😈
-              </motion.div>
-            )}
             {messages.map((m, idx) => (
               <motion.div
                 key={idx}
@@ -124,7 +165,7 @@ const ChatInterface: React.FC = () => {
                 >
                   <div className={`flex items-center gap-2 mb-2 opacity-40 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <span className="text-[9px] uppercase tracking-widest font-black">
-                      {m.role === "user" ? "System User" : "Kuromi"}
+                      {m.role === "user" ? "You" : "Assistant"}
                     </span>
                   </div>
                   <div className="text-sm leading-relaxed font-medium">{m.parts}</div>
@@ -162,14 +203,14 @@ const ChatInterface: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Whisper to Kuromi..."
+                placeholder="Type your message..."
                 className="flex-1 bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-600 py-3 text-sm"
               />
               <div className="flex items-center gap-1 pr-2">
                 <button 
                   onClick={() => setMessages([])}
                   className="p-2.5 text-zinc-600 hover:text-red-400/80 transition-colors"
-                  title="Clear frequency"
+                  title="Clear history"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -178,7 +219,7 @@ const ChatInterface: React.FC = () => {
                   disabled={isLoading}
                   className="px-6 py-2.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 text-white rounded-xl transition-all text-[10px] font-bold uppercase tracking-widest text-pink-400 border border-white/10"
                 >
-                  {isLoading ? "Syncing..." : "Transmit"}
+                  {isLoading ? "Thinking..." : "Send"}
                 </button>
               </div>
             </div>
@@ -196,7 +237,7 @@ const ChatInterface: React.FC = () => {
                 Magical WebGL: Active
               </span>
             </div>
-            <span className="text-[9px] text-zinc-700 italic tracking-wider">Powered by Gemini & Mischief</span>
+            <span className="text-[9px] text-zinc-700 italic tracking-wider">Powered by Gemini AI</span>
           </div>
         </div>
       </footer>

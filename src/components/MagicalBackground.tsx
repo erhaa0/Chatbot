@@ -83,12 +83,12 @@ function Particles({ count = 3000 }) {
     <Points ref={pointsRef} positions={particlesData.pos} stride={3}>
       <PointMaterial
         transparent
-        color="#ff00ff"
-        size={0.2}
+        color="#ff69b4"
+        size={0.35}
         sizeAttenuation={true}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        opacity={0.8}
+        opacity={1}
       />
     </Points>
   );
@@ -118,11 +118,11 @@ function Sparkles({ count = 800 }) {
       <PointMaterial
         transparent
         color="#ffffff"
-        size={0.03}
+        size={0.06}
         sizeAttenuation={true}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        opacity={0.4}
+        opacity={0.6}
       />
     </Points>
   );
@@ -215,10 +215,11 @@ const MagicalBackground: React.FC = () => {
       />
 
       <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
-        <ambientLight intensity={0.8} />
-        <pointLight position={[10, 10, 10]} intensity={2} color="#ff00ff" />
-        <pointLight position={[-10, -10, -10]} intensity={1} color="#4c1d95" />
-        <Particles count={6000} />
+        <ambientLight intensity={1} />
+        <pointLight position={[10, 10, 10]} intensity={3} color="#ff00ff" />
+        <pointLight position={[-10, -10, -10]} intensity={2} color="#4c1d95" />
+        <spotLight position={[0, 5, 0]} intensity={2} color="#ec4899" />
+        <Particles count={7000} />
         <Sparkles count={1500} />
         <MagicTail mouse={glMouse} />
         <color attach="background" args={["#030305"]} />

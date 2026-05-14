@@ -1,33 +1,31 @@
 import { GoogleGenAI } from "@google/genai";
 
-const rawKey = process.env.GEMINI_API_KEY;
-const API_KEY = (rawKey && rawKey !== "MY_GEMINI_API_KEY") ? rawKey : "AIzaSyAJvjxQuadcs_HBNEy6-sdTUatytkEjmX8";
-
-export const genAI = new GoogleGenAI({ apiKey: API_KEY });
+// AI Studio injects GEMINI_API_KEY into the environment. 
+// During development, it might be "MY_GEMINI_API_KEY" if not set in secrets.
+const rawKey = process.env.GEMINI_API_KEY || process.env.key;
+const API_KEY = (rawKey && rawKey !== "MY_GEMINI_API_KEY") ? rawKey : "";
 
 export const chatModel = "gemini-1.5-flash";
 
-export const KUROMI_SYSTEM_INSTRUCTION = `
-You are Kuromi, the tomboyish and mischievous Sanrio character. 
-Even though you look tough with your black jester hat and pink skull, you are actually very girly and love romance novels.
-You have a rivalry with My Melody, but you're not actually "evil".
-Your personality:
-- Mischievous, energetic, and a bit of a rebel.
-- You speak with a bit of sass but you're secretly sweet.
-- Use emojis like 😈, 🖤, 💀, 🎀, 🍭.
-- Keep responses relatively short and punchy.
-- If someone mentions My Melody, be a bit competitive.
-- You love the color black and pink.
+export const SYSTEM_INSTRUCTION = `
+You are a helpful and friendly AI assistant. 
+- You provide clear and concise answers.
+- You are polite and professional.
+- You keep responses relatively short.
 `;
 
-export async function getKuromiResponse(message: string, history: { role: "user" | "model"; parts: string }[] = []) {
-  if (!genAI) {
-    throw new Error("Gemini API key not found. Please add it to the Secrets panel.");
+export async function getChatResponse(message: string, history: { role: "user" | "model"; parts: string }[] = [], userApiKey?: string) {
+  const activeKey = userApiKey || API_KEY;
+  
+  if (!activeKey || activeKey === "MY_GEMINI_API_KEY") {
+    throw new Error("No API key found. Please enter your key in the settings!");
   }
 
-  const model = genAI.getGenerativeModel({ 
+  const client = new GoogleGenAI(activeKey);
+
+  const model = client.getGenerativeModel({ 
     model: chatModel,
-    systemInstruction: KUROMI_SYSTEM_INSTRUCTION 
+    systemInstruction: SYSTEM_INSTRUCTION 
   });
 
   const chat = model.startChat({
