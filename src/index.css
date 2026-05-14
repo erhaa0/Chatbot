@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  
+  --color-brand-pink: #ec4899;
+  --color-brand-dark: #08070b;
+  --color-brand-zinc: #121214;
+}
+
+@layer base {
+  body {
+    @apply bg-[#030305] text-white;
+    overflow: hidden;
+  }
+}
